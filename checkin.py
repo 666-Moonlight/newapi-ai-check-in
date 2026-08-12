@@ -1550,7 +1550,16 @@ class CheckIn:
             print(f"ℹ️ {self.account_name}: Extracted {len(user_cookies)} site login cookies: {list(user_cookies.keys())}")
 
             merged_cookies = {**bypass_cookies, **user_cookies}
-            return await self.check_in_with_cookies(merged_cookies, common_headers, api_user)
+
+            # 新版 New API 使用 JWT access_token 认证，不设置 cookie
+            # 如果响应中包含 access_token，添加到 headers 中作为 Bearer 认证
+            updated_headers = common_headers.copy()
+            access_token = user_data.get("access_token")
+            if access_token:
+                updated_headers["Authorization"] = f"Bearer {access_token}"
+                print(f"ℹ️ {self.account_name}: Found access_token in login response, using Bearer authentication")
+
+            return await self.check_in_with_cookies(merged_cookies, updated_headers, api_user)
 
         except Exception as e:
             print(f"❌ {self.account_name}: Error occurred during site login process - {e}")
